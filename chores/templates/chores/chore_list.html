@@ -1,0 +1,59 @@
+{% extends "chores/base.html" %}
+{% block title %}Chores{% endblock %}
+{% block content %}
+<section class="panel">
+  <h1>Chores</h1>
+  {% if user.role == 'admin' %}<a href="{% url 'chores:chore_create' %}">Create chore</a>{% endif %}
+  <div class="metrics">
+    <div class="metric"><strong>{{ today_chores|length }}</strong>Due today</div>
+    <div class="metric warning"><strong>{{ overdue_chores|length }}</strong>Overdue</div>
+    <div class="metric"><strong>{{ completion_rate }}%</strong>Completion rate</div>
+  </div>
+</section>
+<section class="panel">
+  <h2>Reminders</h2>
+  <div class="reminders">
+    <div><strong>Overdue</strong><ul>{% for chore in overdue_chores %}<li>{{ chore.name }}</li>{% empty %}<li>None</li>{% endfor %}</ul></div>
+    <div><strong>Due in the next 3 days</strong><ul>{% for chore in upcoming_chores %}<li>{{ chore.name }} ({{ chore.due_date }})</li>{% empty %}<li>None</li>{% endfor %}</ul></div>
+  </div>
+</section>
+<section class="panel">
+<form class="filters" method="get">
+  <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Search by name">
+  <select name="status"><option value="">Any status</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="overdue">Overdue</option></select>
+  <select name="priority"><option value="">Any priority</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select>
+  <select name="category"><option value="">Any category</option><option value="cleaning">Cleaning</option><option value="cooking">Cooking</option><option value="shopping">Shopping</option><option value="maintenance">Maintenance</option><option value="other">Other</option></select>
+  <select name="assignee"><option value="">Any assignee</option>{% for member in members %}<option value="{{ member.pk }}">{{ member.email }}</option>{% endfor %}</select>
+  <button type="submit">Filter</button>
+</form>
+</section>
+<section class="panel">
+<h2>Member completions</h2>
+<ul>{% for member in member_stats %}<li>{{ member.email }}: {{ member.completed_chore_count }}</li>{% endfor %}</ul>
+<ul class="chore-list">
+{% for chore in chores %}
+  <li>
+    <strong>{{ chore.name }}</strong> - {{ chore.get_status_display }} - due {{ chore.due_date }}
+    {% if chore.assignee %}({{ chore.assignee.email }}){% endif %}
+    {% if user.role == 'admin' %}
+      <a href="{% url 'chores:chore_edit' chore.pk %}">Edit</a>
+      <form class="inline" method="post" action="{% url 'chores:chore_delete' chore.pk %}">
+        {% csrf_token %}<button type="submit">Delete</button>
+      </form>
+    {% elif not chore.assignee and chore.status == 'pending' %}
+      <form class="inline" method="post" action="{% url 'chores:claim_chore' chore.pk %}">
+        {% csrf_token %}<button type="submit">Claim</button>
+      </form>
+    {% endif %}
+    {% if chore.assignee == user and chore.status != 'completed' %}
+      <form class="inline" method="post" action="{% url 'chores:complete_chore' chore.pk %}">
+        {% csrf_token %}<button type="submit">Mark complete</button>
+      </form>
+    {% endif %}
+  </li>
+{% empty %}
+  <li>No chores yet.</li>
+{% endfor %}
+</ul>
+ </section>
+{% endblock %}

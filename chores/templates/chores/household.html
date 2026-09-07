@@ -1,0 +1,15 @@
+{% extends "chores/base.html" %}
+{% block content %}<section class="panel"><h1>{{ household.name }}</h1>
+<p>Invite code: <strong>{{ household.invite_code }}</strong></p>
+<p>Members: {{ household.members.count }}</p>
+<p><a class="button" href="{% url 'chores:chore_list' %}">Open chore dashboard</a></p>
+{% if user.role == 'admin' %}
+<a href="{% url 'chores:add_member' %}">Add member</a>
+<form method="post" action="{% url 'chores:regenerate_invite' %}">
+  {% csrf_token %}<button type="submit">Generate new invite code</button>
+</form>
+{% endif %}
+<form method="post" action="{% url 'chores:logout' %}">
+  {% csrf_token %}<button type="submit">Log out</button>
+</form>
+</section>{% endblock %}

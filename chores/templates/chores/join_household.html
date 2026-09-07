@@ -1,0 +1,6 @@
+{% extends "chores/base.html" %}
+{% block content %}<section class="panel"><h1>Join household</h1>
+<form method="post">
+  {% csrf_token %}{{ form.as_p }}
+  <button type="submit">Join</button>
+</form></section>{% endblock %}
